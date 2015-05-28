@@ -28,7 +28,7 @@ namespace Injustice_Hive
         {
             return m_Position;
         }
-        public void setPosition(Vector3 pos)
+        public virtual void setPosition(Vector3 pos)
         {
             m_Position = pos;
         }

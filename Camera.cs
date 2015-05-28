@@ -16,14 +16,13 @@ namespace Injustice_Hive
             m_FOV = fov;
             m_width = width;
             m_height = height;
-            setPosition(new Vector3(0, 0, 0));
-            m_Projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(fov), (width / height), 0.1f, 100f);
-            m_View = Matrix4.LookAt(getPosition(), new Vector3(0f, 0f, 0f), new Vector3(0f, 1f, 0f));
+            updateProjectionMatrix();
+            updateViewMatrix();
         }
 
-        private Matrix4 m_Projection;
-        private Matrix4 m_View;
-        private Matrix4 m_VP;
+        protected Matrix4 m_Projection;
+        protected Matrix4 m_View;
+        protected Matrix4 m_VP;
         public Matrix4 getProjectionMatrix()
         {
             return m_Projection;
@@ -36,7 +35,7 @@ namespace Injustice_Hive
         {
             return m_VP;
         }
-        private void updateProjectionMatrix()
+        protected void updateProjectionMatrix()
         {
             m_Projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.DegreesToRadians(getFOV()), (getFWidth() / getFHeight()), 0.1f, 100f);
             Matrix4 View = getViewMatrix();
@@ -45,7 +44,7 @@ namespace Injustice_Hive
             Matrix4.Mult(ref View, ref Proj, out Projview);
             m_VP = Projview;
         }
-        private void updateViewMatrix()
+        protected virtual void updateViewMatrix()
         {
             m_View = Matrix4.LookAt(getPosition(), new Vector3(0f, 0f, 0f), new Vector3(0f, 1f, 0f));
             Matrix4 View = getViewMatrix();
@@ -55,13 +54,13 @@ namespace Injustice_Hive
             m_VP = Projview;
         }
 
-        private float m_width;
-        private float m_height;
-        private float getFWidth()
+        protected float m_width;
+        protected float m_height;
+        protected float getFWidth()
         {
             return m_width;
         }
-        private float getFHeight()
+        protected float getFHeight()
         {
             return m_height;
         }
@@ -84,7 +83,7 @@ namespace Injustice_Hive
             updateProjectionMatrix();
         }
 
-        private int m_preferredFOV = 45;
+        protected int m_preferredFOV = 45;
         public int getPreferredFOV()
         {
             if (m_preferredFOV > 0 && m_preferredFOV <= 360)
@@ -108,7 +107,7 @@ namespace Injustice_Hive
             }
         }
 
-        private int m_FOV = 0;
+        protected int m_FOV = 0;
         public int getFOV()
         {
             if (m_FOV > 0 && m_FOV <= 360)
@@ -132,10 +131,82 @@ namespace Injustice_Hive
             }
         }
 
-        public void setPosition(Vector3 pos)
+        public override void setPosition(Vector3 pos)
         {
             base.setPosition(pos);
             updateViewMatrix();
+        }
+    }
+
+    class OrbitCamera : Camera
+    {
+        private Vector3 pivot;
+
+        private float rho; //radius
+        private float theta; //azimuthal
+        private float phi; //polar
+
+        public OrbitCamera(float width, float height, int fov, Vector3 pivot) : base(width,height,fov)
+        {
+            this.pivot = pivot;
+        }
+
+        protected override void updateViewMatrix()
+        {
+            m_View = Matrix4.LookAt(getPosition(), pivot, new Vector3(0f, (phi > 0 ? 1f : -1f) * (Math.Abs(phi) < Math.PI ? 1f : -1f), 0f));
+            Matrix4 View = getViewMatrix();
+            Matrix4 Proj = getProjectionMatrix();
+            Matrix4 Projview;
+            Matrix4.Mult(ref View, ref Proj, out Projview);
+            m_VP = Projview;
+        }
+
+        public override void setPosition(Vector3 pos)
+        {
+            rho = pos.Length;
+            theta = (float)Math.Atan((pos.X - pivot.X) / (pos.Z - pivot.Z));
+            phi = (float)Math.Acos((pos.Y - pivot.Y) / rho);
+            base.setPosition(pos);
+        }
+        
+        public void setPosition(Vector3 pos, bool recalculate)
+        {
+            if (!recalculate)
+            {
+                base.setPosition(pos);
+                Console.WriteLine(new Vector4(theta / (float)(Math.PI), phi / (float)(Math.PI),getPosition().Z,getPosition().Y));
+
+            }
+            else
+            {
+                setPosition(pos);
+            }
+        }
+
+        public void setPositionSpherical(Vector3 pos)
+        {
+            if (pos.Equals(getPositionSpherical())) { return; }
+
+            float new_rho = pos.X;
+            float new_theta = (pos.Y % (float)(2 * Math.PI)) + (float)(Math.Sign(pos.Y) < 0 ? 2*Math.PI : 0f);
+            float new_phi = (pos.Z % (float)(2 * Math.PI)) + (float)(Math.Sign(pos.Y) < 0 ? 2 * Math.PI : 0f);
+
+            rho = new_rho;
+            theta = new_theta;
+            phi = new_phi;
+
+            //+(theta % (2*Math.PI))
+                                                                //as Wolfram MathWorld sees it
+            float x = rho * (float)Math.Sin(theta) * (float)Math.Sin(phi);  //y
+            float y = rho * (float)Math.Cos(phi);                           //z
+            float z = rho * (float)Math.Cos(theta) * (float)Math.Sin(phi);  //x
+
+            setPosition(new Vector3(x+pivot.X,y+pivot.Y,z+pivot.Z),false);
+        }
+
+        public Vector3 getPositionSpherical() {
+
+            return new Vector3(rho, theta, phi);
         }
     }
 }

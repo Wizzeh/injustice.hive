@@ -175,7 +175,5 @@ namespace Injustice_Hive
                 }
             }
         }
-
-
     }
 }

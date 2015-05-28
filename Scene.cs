@@ -56,10 +56,11 @@ namespace Injustice_Hive
         private void addGODefault()
         {
             Random rnd = new Random();
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < 1; i++)
             {
                 Console.WriteLine(i);
-                addObject(new GameObject(rnd.Next(-2,3),rnd.Next(-2,3),rnd.Next(-2,3)));
+                addObject(new GameObject());
+                //addObject(new GameObject(rnd.Next(-2,3),rnd.Next(-2,3),rnd.Next(-2,3)));
             }
         }
 

@@ -17,6 +17,8 @@ namespace Injustice_Hive
              */
 
             VSync = VSyncMode.Off;
+            GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.CullFace);
 
             /*
              * Load Shaders 
@@ -163,8 +165,8 @@ namespace Injustice_Hive
             //GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(3 * trianglecolors.Length * sizeof(float)),trianglecolors,BufferUsageHint.StaticDraw);
             Scene scene = new Scene();
             Console.WriteLine(ClientRectangle.Width);
-            scene.setCamera(new Camera(ClientRectangle.Width, ClientRectangle.Height,45));
-            scene.getCamera().setPosition(new Vector3(4f, 3f, 3f));
+            scene.setCamera(new OrbitCamera(ClientRectangle.Width, ClientRectangle.Height,45,new Vector3(0,0,0)));
+            ((OrbitCamera)(scene.getCamera())).setPositionSpherical(new Vector3(5f, 0f, .66f));
             setCurrentScene(scene);
             getCurrentScene().init();
 
